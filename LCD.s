@@ -1,7 +1,7 @@
 #include <xc.inc>
 
 global  LCD_Setup, LCD_Write_Message, LCD_Clear, Second_Line
-global	Shift_Left, First_Line
+global	Shift_Left, First_Line, LCD_Write_Hex
 
 psect	udata_acs   ; named variables in access ram
 LCD_cnt_l:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
@@ -9,6 +9,9 @@ LCD_cnt_h:	ds 1   ; reserve 1 byte for variable LCD_cnt_h
 LCD_cnt_ms:	ds 1   ; reserve 1 byte for ms counter
 LCD_tmp:	ds 1   ; reserve 1 byte for temporary use
 LCD_counter:	ds 1   ; reserve 1 byte for counting through nessage
+    
+psect	udata_acs_ovr, space=1, class=COMRAM
+LCD_hex_tmp:	ds 1 ; reserve 1 byte for variable LCD_hex_tmp
 
 	LCD_E	EQU 5	; LCD enable bit
     	LCD_RS	EQU 4	; LCD register select bit
@@ -133,6 +136,22 @@ Shift_Left:			    ; Moves cursor one space to the left
     movwf   10
     call    LCD_delay_ms
     return
+    
+LCD_Write_Hex:			; Writes byte stored in W as hex
+	movwf	LCD_hex_tmp, A
+	swapf	LCD_hex_tmp, W, A	; high nibble first
+	call	LCD_Hex_Nib
+	movf	LCD_hex_tmp, W, A	; then low nibble
+LCD_Hex_Nib:			; writes low nibble as hex character
+	andlw	0x0F
+	movwf	LCD_tmp, A
+	movlw	0x0A
+	cpfslt	LCD_tmp, A
+	addlw	0x07		; number is greater than 9 
+	addlw	0x26
+	addwf	LCD_tmp, W, A
+	call	LCD_Send_Byte_D ; write out ascii
+	return	
 	
 ; ** a few delay routines below here as LCD timing can be quite critical ****
 LCD_delay_ms:			    ; delay given in ms in W
