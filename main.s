@@ -5,9 +5,11 @@ global	start
 
 extrn	UART_Setup, UART_Transmit_Message  ; external subroutines
 extrn	LCD_Setup, LCD_Write_Message, LCD_Clear, Second_Line, First_Line
+extrn	LCD_Write_Hex
 extrn	Keypad_Setup, Keypad_Read
 extrn	Input_Angle, Sine_Msg, Cosine_Msg
 extrn	User_Input_Setup, Press_Clear
+;extrn	ans_hc, ans_lc, ans_hs, ans_hl
 ;extrn	cordic_setup
 	
 psect	udata_acs			   ; reserve data space in access ram
@@ -73,6 +75,11 @@ output:
     call    delay_ms
     call    delay_ms
     
+    movf    ans_hs, W, A
+    call    LCD_Write_Hex
+    movf    ans_ls, W, A
+    call    LCD_Write_Hex
+    
     call    Second_Line			  ; Writing Cosine msg + value to 
 					  ; second line of LCD
     movlw   cosine
@@ -83,6 +90,11 @@ output:
     call    delay_ms
     call    delay_ms
     call    delay_ms
+    
+    movf    ans_hc, W, A
+    call    LCD_Write_Hex
+    movf    ans_lc, W, A
+    call    LCD_Write_Hex
     
     call    Press_Clear			  ; Checks foor C button press
     call    First_Line			  ; Moves cursor back to start position
