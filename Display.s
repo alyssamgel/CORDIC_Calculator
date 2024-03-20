@@ -1,6 +1,6 @@
 #include <xc.inc>
     
-global	multiply_8x8, multiply_16x16, convert_to_decimal
+global	multiply_8x8, multiply_16x16, convert_to_decimal, ans_h, ans_l
 ;extrn	ans
     
 psect udata_acs:
