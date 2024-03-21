@@ -19,6 +19,7 @@
       <itemPath>Keypad.s</itemPath>
       <itemPath>Messages.s</itemPath>
       <itemPath>Digit_Input.s</itemPath>
+      <itemPath>Display.s</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
