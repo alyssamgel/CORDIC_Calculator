@@ -13,10 +13,16 @@ sigma:      ds 1
 iter_down:  ds 1
 iter_up:    ds 1
 count:      ds 1
+tan_array_ram:	ds 9
+counter:    ds 1
+temp:	    ds 1
 
 psect data
 tan_array:
-    db 128, 75, 39, 20, 10, 5, 2, 1
+    db 0x45, 0x80, 0x4B, 0x27, 0x14, 0x0A, 0x05, 0x02, 0x01
+    tan_array_len   EQU	9
+    align    2
+   
 
 
 psect cordic_code, class=CODE
@@ -26,10 +32,29 @@ cordic_setup:
     movwf   iter_down, A
     movlw   0x00
     movwf   y0, A
+    movwf   iter_up, A
+    movwf   z0, A
+    movwf   x1, A
+    movwf   y1, A
+    movwf   z1, A
     movlw   0xFF
     movwf   x0, A
-    movlw   0x00
-    movwf   iter_up, A
+    
+    start: 	
+	lfsr	1, tan_array_ram	; Load FSR0 with address in RAM	
+	movlw	low highword(tan_array)	; address of data in PM
+	movwf	TBLPTRU, A		; load upper bits to TBLPTRU
+	movlw	high(tan_array)		; address of data in PM
+	movwf	TBLPTRH, A		; load high byte to TBLPTRH
+	movlw	low(tan_array)		; address of data in PM
+	movwf	TBLPTRL, A		; load low byte to TBLPTRL
+	movlw	tan_array_len		; bytes to read
+	movwf 	counter, A		; our counter register
+    loop: 	
+	tblrd*+				; one byte from PM to TABLAT, increment TBLPRT
+	movff	TABLAT, POSTINC1	; move data from TABLAT to (FSR0), inc FSR0	
+	decfsz	counter, A		; count down to zero
+	bra	loop			; keep going until finished
     return
     
 load_z0:
@@ -47,60 +72,66 @@ cordic_loop:
     movff   z1, z0, A
     
     incf    iter_up, F, A
-    decfsz  iter_down, F, A        ; Loop for 16 iterations
+    decfsz  iter_down, F, A        ; Loop for 8 iterations
     goto    cordic_loop
     return
 
 update_x:
-    movf    iter_up, W, A
-    movwf   count, A
+    movff   iter_up, count, A
+    movlw   0x01
+    addwf   count, A
     movf    y0, W, A
 bitshift_loop_x:
     bcf     STATUS, 0
-    rrcf    WREG, F
+    rrcf    WREG, W
     decfsz  count, F, A
     goto    bitshift_loop_x
-    movwf   y0, A
-    btfss   sigma, 7, A
+    movwf   temp, A				; move shifted y0 into temp
+    btfss   sigma, 0, A
     goto    skip_as_positive_x
-    comf    y0, F, A
-    incf    y0, F, A
+    comf    temp, F, A
+    incf    temp, F, A
 skip_as_positive_x:
-    movf    y0, W, A
     movff   x0, x1, A
+    movf    temp, W, A
     subwf   x1, F, A
     return
 
 update_y:
-    movf    iter_up, W, A
-    movwf   count, A
+    movff   iter_up, count, A
+    movlw   0x01
+    addwf   count, A
     movf    x0, W, A
 bitshift_loop_y:
     bcf     STATUS, 0
-    rrcf    WREG, F
+    rrcf    WREG, W
     decfsz  count, F, A
     goto    bitshift_loop_y
-    movwf   x0, A
-    btfss   sigma, 7, A
+    movwf   temp, A
+    btfss   sigma, 0, A
     goto    skip_as_positive_y
-    comf    x0, F, A
-    incf    x0, F, A
+    comf    temp, F, A
+    incf    temp, F, A
 skip_as_positive_y:
-    movf    x0, W, A
     movff   y0, y1, A
+    movf    temp, W, A
     addwf   y1, F, A
     return
 
 update_z:
-    lfsr    1, tan_array
+    movff   z0, z1, A
+    lfsr    1, tan_array_ram		; Load tan_array into fsr 1
     movf    iter_up, W, A
-    addlw   LOW tan_array
-    movwf   FSR1L
+    addlw   FSR1L
     movf    POSTINC1, W
     btfsc   sigma, 0, A
-    subwf   z0, F, A
+    goto    pos_sigma
+    subwf   z1, F, A
     goto    update_z_end
-    addwf   z0, F, A
+    
+pos_sigma:
+    addwf   z1, F, A
+    
 update_z_end:
     return
 
