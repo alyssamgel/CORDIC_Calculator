@@ -4,7 +4,7 @@ global	User_Input_Setup, Press_Clear
 extrn	Keypad_Read
 extrn	LCD_Write_Message, LCD_Clear, Second_Line, Shift_Left
 extrn	input_address_1, input_address_2, delay_ms, start
-;extrn	cordic_loop
+extrn	cordic_loop, load_z0
     
 psect	udata_acs		    ; reserve data space in access ram
 digit_counter:	ds 1
@@ -50,9 +50,12 @@ Press_Enter:			    ; Checks to see if E button pressed
     movlw	0xFF
     cpfslt	enter
     bra		Press_Enter
-
+    
+    movf	before_dec, W, A
+    call	load_z0
+    movlw	0x00
+    call	cordic_loop
     call	LCD_Clear	   ; Clear screen 
-    ;call	cordic_loop	   ; Calculate cosine and sine values 
 
 return
 	
@@ -125,7 +128,7 @@ User_Input_2:
 Backspace:
     call    Shift_Left			; backspace = shift cursor left and 
 					    ; print a space 
-    movlw   'N'
+    movlw   ' '
     
     movwf   FSR2
     movlw   1
