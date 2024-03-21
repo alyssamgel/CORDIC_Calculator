@@ -1,7 +1,7 @@
 #include <xc.inc>
 
 global  LCD_Setup, LCD_Write_Message, LCD_Clear, Second_Line
-global	Shift_Left, First_Line, LCD_Write_Hex
+global	Shift_Left, First_Line, LCD_Hex_Nib, LCD_Write_Hex
 
 psect	udata_acs   ; named variables in access ram
 LCD_cnt_l:	ds 1   ; reserve 1 byte for variable LCD_cnt_l
