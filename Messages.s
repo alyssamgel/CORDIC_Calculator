@@ -1,7 +1,7 @@
 #include <xc.inc>
     
-global	Input_Angle, Sine_Msg, Cosine_Msg
-extrn	inputangle, sine, cosine
+global	Input_Angle, Sine_Msg, Cosine_Msg, Display_Msg
+extrn	inputangle, sine, cosine, display
     
 psect Messages, class = CODE
  
@@ -115,4 +115,16 @@ Sine_Msg:
     movwf   INDF0
     
     return 
-
+    
+Display_Msg:
+    movlw   display
+    movwf   FSR0
+    
+    movlw   '0'
+    movwf   INDF0
+    incf    FSR0, F
+    
+    movlw   ':'
+    movwf   INDF0
+    
+    return
