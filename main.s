@@ -1,7 +1,7 @@
 #include <xc.inc>
 
 global	inputangle, delay_ms, input_address_1, input_address_2, sine, cosine
-global	start
+global	start, display
 
 extrn	UART_Setup, UART_Transmit_Message  ; external subroutines
 extrn	LCD_Setup, LCD_Write_Message, LCD_Clear, Second_Line, First_Line
@@ -27,6 +27,7 @@ digit_low:  ds 1
     inputangle		EQU 0xA0
     sine		EQU 0xD0
     cosine		EQU 0xE0
+    display		EQU 0xF0
 	
 psect	udata_bank4			   ; reserve data anywhere in RAM
 myArray:    ds 0x80
@@ -46,6 +47,7 @@ setup:	bcf	CFGS			   ; point to Flash program memory
 	call	Input_Angle		   ; load all messages
 	call	Sine_Msg
 	call	Cosine_Msg
+	call	Display_Msg
 	
 	goto	start
 	
@@ -82,6 +84,11 @@ output:
     call    delay_ms
     call    delay_ms
     
+    movlw   display
+    movwf   FSR2
+    movlw   2
+    call    LCD_Write_Message
+    
     call    return_sin
     movwf   sine_out
     
@@ -103,6 +110,11 @@ output:
     call    delay_ms
     call    delay_ms
     call    delay_ms
+    
+    movlw   display
+    movwf   FSR2
+    movlw   2
+    call    LCD_Write_Message
     
     call    return_cosine
     movwf   cosine_out
