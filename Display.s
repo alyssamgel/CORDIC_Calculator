@@ -1,9 +1,10 @@
 #include <xc.inc>
     
-global	multiply_8x8, multiply_16x16, convert_to_decimal, ans_h, ans_l
+global	multiply_8x8, multiply_16x16, convert_to_decimal, ans_h, ans_l, split
 ;extrn	ans
     
 psect udata_acs:
+    ans:     ds 1
     ans_h:   ds 1
     ans_l:   ds 1
 
@@ -24,6 +25,7 @@ psect udata_acs:
 psect	display_code,class=CODE
     
 split:
+    movwf   ans
     movf    ans, ans_l
     rlncf   ans_l, F
     rlncf   ans_l, F
