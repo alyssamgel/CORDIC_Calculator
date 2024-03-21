@@ -5,19 +5,22 @@ global	start
 
 extrn	UART_Setup, UART_Transmit_Message  ; external subroutines
 extrn	LCD_Setup, LCD_Write_Message, LCD_Clear, Second_Line, First_Line
-extrn	LCD_Write_Hex
+extrn	LCD_Hex_Nib
 extrn	Keypad_Setup, Keypad_Read
 extrn	Input_Angle, Sine_Msg, Cosine_Msg
 extrn	User_Input_Setup, Press_Clear
-extrn	split, convert_to_decimal, ans_h, ans_l
-;extrn	ans_hc, ans_lc, ans_hs, ans_hl
-;extrn	cordic_setup
+extrn	cordic_setup, return_sin, return_cosine
 	
-psect	udata_acs			   ; reserve data space in access ram
-counter:	ds 1			    
-cnt_ms:	ds 1				   ; reserve 1 byte for ms counter
-cnt_l:	ds 1				   ; reserve 1 byte for variable cnt_l
-cnt_h:	ds 1				   ; reserve 1 byte for variable cnt_h
+psect	udata_acs			    ; reserve data space in access ram
+counter:    ds 1			    
+cnt_ms:	    ds 1			    ; reserve 1 byte for ms counter
+cnt_l:	    ds 1			    ; reserve 1 byte for variable cnt_l
+cnt_h:	    ds 1			    ; reserve 1 byte for variable cnt_h
+sine_out:   ds 1
+cosine_out: ds 1
+number:	    ds 1
+digit_high: ds 1
+digit_low:  ds 1
     
     input_address_1	EQU 0xB0
     input_address_2	EQU 0xC0
@@ -38,7 +41,7 @@ setup:	bcf	CFGS			   ; point to Flash program memory
 	call	UART_Setup		   ; setup UART
 	call	LCD_Setup		   ; setup LCD
 	call	Keypad_Setup		   ; setup Keypad
-	;call	cordic_setup		   ; setup CORDIC
+	call	cordic_setup		   ; setup CORDIC
 	
 	call	Input_Angle		   ; load all messages
 	call	Sine_Msg
@@ -48,6 +51,9 @@ setup:	bcf	CFGS			   ; point to Flash program memory
 	
 	; ******* Main programme ****************************************
 start: 	
+    clrf	digit_high
+    clrf	digit_low
+    
     movlw	inputangle		   ; Writes 'input angle' message 
     movwf	FSR2
     movlw	12			   ; Number of characters in message
@@ -76,14 +82,16 @@ output:
     call    delay_ms
     call    delay_ms
     
-    movlw   0x16
-    call    split
-    call    convert_to_decimal
+    call    return_sin
+    movwf   sine_out
     
-    movf    ans_h, W, A
-    call    LCD_Write_Hex
-    movf    ans_l, W, A
-    call    LCD_Write_Hex
+    movwf   number
+    call    loop_subtract
+    
+    movf    digit_high, W, A
+    call    LCD_Hex_Nib
+    movf    digit_low, W, A
+    call    LCD_Hex_Nib
     
     call    Second_Line			  ; Writing Cosine msg + value to 
 					  ; second line of LCD
@@ -96,10 +104,16 @@ output:
     call    delay_ms
     call    delay_ms
     
-    ;movf    ans_hc, W, A
-    ;call    LCD_Write_Hex
-    ;movf    ans_lc, W, A
-    ;call    LCD_Write_Hex
+    call    return_cosine
+    movwf   cosine_out
+    
+    movwf   number
+    call    loop_subtract
+    
+    movf    digit_high, W, A
+    call    LCD_Hex_Nib
+    movf    digit_low, W, A
+    call    LCD_Hex_Nib
     
     call    Press_Clear			  ; Checks foor C button press
     call    First_Line			  ; Moves cursor back to start position
@@ -135,4 +149,20 @@ lp1:	decf 	cnt_l, F, A		; no carry when 0x00 -> 0xff
 	bc 	lp1			; carry, then loop again
 	return				; carry reset so return
 	
+    
+loop_subtract:
+    movlw   10              ; Load W with the decimal 10
+    subwf   number, W, A       ; Subtract 10 from number, result in W
+    btfss   STATUS, 0       ; Check if there was no borrow (Carry set)
+    goto    done            ; Borrow occurred, subtraction invalid, done
+    movwf   number
+    incf    digit_high, F
+    bra	    loop_subtract
+
+done:
+    movf    number, W, A       ; Move the remainder to W
+    movwf   digit_low, A       ; Move W to the ones place
+    return
+	
 	end	rst
+
