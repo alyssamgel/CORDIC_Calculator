@@ -9,6 +9,7 @@ extrn	LCD_Write_Hex
 extrn	Keypad_Setup, Keypad_Read
 extrn	Input_Angle, Sine_Msg, Cosine_Msg
 extrn	User_Input_Setup, Press_Clear
+extrn	split, convert_to_decimal, ans_h, ans_l
 ;extrn	ans_hc, ans_lc, ans_hs, ans_hl
 ;extrn	cordic_setup
 	
@@ -75,9 +76,13 @@ output:
     call    delay_ms
     call    delay_ms
     
-    movf    ans_hs, W, A
+    movlw   0x16
+    call    split
+    call    convert_to_decimal
+    
+    movf    ans_h, W, A
     call    LCD_Write_Hex
-    movf    ans_ls, W, A
+    movf    ans_l, W, A
     call    LCD_Write_Hex
     
     call    Second_Line			  ; Writing Cosine msg + value to 
@@ -91,10 +96,10 @@ output:
     call    delay_ms
     call    delay_ms
     
-    movf    ans_hc, W, A
-    call    LCD_Write_Hex
-    movf    ans_lc, W, A
-    call    LCD_Write_Hex
+    ;movf    ans_hc, W, A
+    ;call    LCD_Write_Hex
+    ;movf    ans_lc, W, A
+    ;call    LCD_Write_Hex
     
     call    Press_Clear			  ; Checks foor C button press
     call    First_Line			  ; Moves cursor back to start position
