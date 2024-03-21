@@ -16,11 +16,13 @@ count:      ds 1
 tan_array_ram:	ds 9
 counter:    ds 1
 temp:	    ds 1
+    
+    tan_address   EQU 0x70
 
 psect data
 tan_array:
-    db 0x45, 0x80, 0x4B, 0x27, 0x14, 0x0A, 0x05, 0x02, 0x01
-    tan_array_len   EQU	9
+    db 0x80, 0x4B, 0x27, 0x14, 0x0A, 0x05, 0x02, 0x01
+    tan_array_len   EQU	8
     align    2
    
 
@@ -41,7 +43,7 @@ cordic_setup:
     movwf   x0, A
     
     start: 	
-	lfsr	1, tan_array_ram	; Load FSR0 with address in RAM	
+	lfsr	1, tan_address		; Load FSR0 with address in RAM	
 	movlw	low highword(tan_array)	; address of data in PM
 	movwf	TBLPTRU, A		; load upper bits to TBLPTRU
 	movlw	high(tan_array)		; address of data in PM
@@ -120,7 +122,7 @@ skip_as_positive_y:
 
 update_z:
     movff   z0, z1, A
-    lfsr    1, tan_array_ram		; Load tan_array into fsr 1
+    lfsr    1, tan_address		; Load tan_array into fsr 1
     movf    iter_up, W, A
     addlw   FSR1L
     movf    POSTINC1, W
