@@ -117,7 +117,7 @@ output:
     
     call    Press_Clear			  ; Checks foor C button press
     call    First_Line			  ; Moves cursor back to start position
-    goto    start			  ; Restarts programme
+    goto    setup			  ; Restarts programme
     
 
 	
