@@ -3,24 +3,24 @@
 global	inputangle, delay_ms, input_address_1, input_address_2, sine, cosine
 global	start, display
 
-extrn	UART_Setup, UART_Transmit_Message  ; external subroutines
+extrn	UART_Setup, UART_Transmit_Message, UART_Hex_Nib  ; external subroutines
 extrn	LCD_Setup, LCD_Write_Message, LCD_Clear, Second_Line, First_Line
 extrn	LCD_Hex_Nib
 extrn	Keypad_Setup, Keypad_Read
-extrn	Input_Angle, Sine_Msg, Cosine_Msg
+extrn	Input_Angle, Sine_Msg, Cosine_Msg, Display_Msg
 extrn	User_Input_Setup, Press_Clear
 extrn	cordic_setup, return_sin, return_cosine
 	
 psect	udata_acs			    ; reserve data space in access ram
-counter:    ds 1			    
-cnt_ms:	    ds 1			    ; reserve 1 byte for ms counter
-cnt_l:	    ds 1			    ; reserve 1 byte for variable cnt_l
-cnt_h:	    ds 1			    ; reserve 1 byte for variable cnt_h
-sine_out:   ds 1
-cosine_out: ds 1
-number:	    ds 1
-digit_high: ds 1
-digit_low:  ds 1
+counter:	ds 1			    
+cnt_ms:		ds 1			    ; reserve 1 byte for ms counter
+cnt_l:		ds 1			    ; reserve 1 byte for variable cnt_l
+cnt_h:		ds 1			    ; reserve 1 byte for variable cnt_h
+sine_out:	ds 1
+cosine_out:	ds 1
+number:		ds 1
+digit_first:	ds 1
+digit_second:	ds 1
     
     input_address_1	EQU 0xB0
     input_address_2	EQU 0xC0
@@ -53,8 +53,8 @@ setup:	bcf	CFGS			   ; point to Flash program memory
 	
 	; ******* Main programme ****************************************
 start: 	
-    clrf	digit_high
-    clrf	digit_low
+    clrf	digit_first
+    clrf	digit_second
     
     movlw	inputangle		   ; Writes 'input angle' message 
     movwf	FSR2
@@ -95,10 +95,15 @@ output:
     movwf   number
     call    loop_subtract
     
-    movf    digit_high, W, A
+    movf    digit_first, W, A
     call    LCD_Hex_Nib
-    movf    digit_low, W, A
+    movf    digit_second, W, A
     call    LCD_Hex_Nib
+    
+    movf    digit_first, W, A
+    call    UART_Hex_Nib
+    movf    digit_second, W, A
+    call    UART_Hex_Nib
     
     call    Second_Line			  ; Writing Cosine msg + value to 
 					  ; second line of LCD
@@ -122,10 +127,15 @@ output:
     movwf   number
     call    loop_subtract
     
-    movf    digit_high, W, A
+    movf    digit_first, W, A
     call    LCD_Hex_Nib
-    movf    digit_low, W, A
+    movf    digit_second, W, A
     call    LCD_Hex_Nib
+    
+    movf    digit_first, W, A
+    call    UART_Hex_Nib
+    movf    digit_second, W, A
+    call    UART_Hex_Nib
     
     call    Press_Clear			  ; Checks foor C button press
     call    First_Line			  ; Moves cursor back to start position
@@ -168,12 +178,12 @@ loop_subtract:
     btfss   STATUS, 0       ; Check if there was no borrow (Carry set)
     goto    done            ; Borrow occurred, subtraction invalid, done
     movwf   number
-    incf    digit_high, F
+    incf    digit_first, F
     bra	    loop_subtract
 
 done:
     movf    number, W, A       ; Move the remainder to W
-    movwf   digit_low, A       ; Move W to the ones place
+    movwf   digit_second, A       ; Move W to the ones place
     return
 	
 	end	rst
