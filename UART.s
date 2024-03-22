@@ -1,9 +1,10 @@
 #include <xc.inc>
     
-global  UART_Setup, UART_Transmit_Message
+global  UART_Setup, UART_Transmit_Message, UART_Transmit_Byte, UART_Hex_Nib
 
 psect	udata_acs   ; reserve data space in access ram
-UART_counter: ds    1	    ; reserve 1 byte for variable UART_counter
+UART_counter: ds 1	    ; reserve 1 byte for variable UART_counter
+UART_temp:    ds 1
 
 psect	uart_code,class=CODE
 UART_Setup:
@@ -32,5 +33,16 @@ UART_Transmit_Byte:	    ; Transmits byte stored in W
     bra	    UART_Transmit_Byte
     movwf   TXREG1, A
     return
+    
+UART_Hex_Nib:			; writes low nibble as hex character
+	andlw	0x0F
+	movwf	UART_temp, A
+	movlw	0x0A
+	cpfslt	UART_temp, A
+	addlw	0x07		; number is greater than 9 
+	addlw	0x26
+	addwf	UART_temp, W, A
+	call	UART_Transmit_Byte ; write out ascii
+	return
 
 
