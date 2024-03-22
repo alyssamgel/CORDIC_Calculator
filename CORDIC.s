@@ -3,19 +3,18 @@
 global cordic_setup, cordic_loop, return_sin, return_cosine, load_z0
 
 psect udata_acs
-x0:         ds 1
-x1:         ds 1
-y0:         ds 1
-y1:         ds 1
-z0:         ds 1
-z1:         ds 1
-sigma:      ds 1
-iter_down:  ds 1
-iter_up:    ds 1
-count:      ds 1
-tan_array_ram:	ds 9
-counter:    ds 1
-temp:	    ds 1
+x0:		ds 1
+x1:		ds 1
+y0:		ds 1
+y1:		ds 1
+z0:		ds 1
+z1:		ds 1
+sigma:		ds 1
+iter_down:	ds 1
+iter_up:	ds 1
+count:		ds 1
+counter:	ds 1
+temp:		ds 1
     
     tan_address   EQU 0x70
 
@@ -39,6 +38,7 @@ cordic_setup:
     movwf   x1, A
     movwf   y1, A
     movwf   z1, A
+    movwf   temp, A
     movlw   0xFF
     movwf   x0, A
     
@@ -61,6 +61,7 @@ cordic_setup:
     
 load_z0:
     movwf   z0, A
+    lfsr    1, tan_address		; Load tan_array into fsr 1
     return 
 
 cordic_loop:  
@@ -122,7 +123,6 @@ skip_as_positive_y:
 
 update_z:
     movff   z0, z1, A
-    lfsr    1, tan_address		; Load tan_array into fsr 1
     movf    iter_up, W, A
     addlw   FSR1L
     movf    POSTINC1, W
@@ -139,8 +139,13 @@ update_z_end:
 
 find_sigma_j:
     btfss   z0, 7, A			; bit test z, +ve or -ve
-    movlw   0x00			; If sig < 0 then set #0 to 0
-    movlw   0x01			; If sig > 0 then set #0 to 1
+    goto    neg_sigma
+    movlw   0x01			; If sig < 0 then set #0 to 1
+    movwf   sigma, A
+    return
+    
+    neg_sigma:
+    movlw   0x00			; If sig > 0 then set #0 to 0
     movwf   sigma, A
     return
 
