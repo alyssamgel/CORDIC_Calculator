@@ -124,7 +124,7 @@ Display_Msg:
     movwf   INDF0
     incf    FSR0, F
     
-    movlw   ':'
+    movlw   '.'
     movwf   INDF0
     
     return
