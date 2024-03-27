@@ -20,7 +20,7 @@ temp:		ds 1
 
 psect data
 tan_array:
-    db 0x80, 0x4B, 0x27, 0x14, 0x0A, 0x05, 0x02, 0x01
+    db 0x80, 0x4B, 0x27, 0x14, 0x0A, 0x05, 0x02, 0x01		
     tan_array_len   EQU	8
     align    2
    
@@ -29,17 +29,17 @@ tan_array:
 psect cordic_code, class=CODE
 
 cordic_setup:
-    movlw   0x0F    
+    movlw   0x0F    			; initialise iter_down to 8 
     movwf   iter_down, A
-    movlw   0x00
-    movwf   y0, A
+    movlw   0x00			; initialise y0, z0, x1, y1, z1, temp and iter_up to 0 
+    movwf   y0, A		
     movwf   iter_up, A
     movwf   z0, A
     movwf   x1, A
     movwf   y1, A
     movwf   z1, A
     movwf   temp, A
-    movlw   0xFF
+    movlw   0xFF		        ; initialise x0 to 0xFF
     movwf   x0, A
     
     start: 	
@@ -60,7 +60,7 @@ cordic_setup:
     return
     
 load_z0:
-    movwf   z0, A
+    movwf   z0, A			; Moving z0 into WREG 
     lfsr    1, tan_address		; Load tan_array into fsr 1
     return 
 
@@ -75,7 +75,7 @@ cordic_loop:
     movff   z1, z0, A
     
     incf    iter_up, F, A
-    decfsz  iter_down, F, A        ; Loop for 8 iterations
+    decfsz  iter_down, F, A             ; Loop for 8 iterations
     goto    cordic_loop
     return
 
@@ -89,8 +89,8 @@ bitshift_loop_x:
     rrcf    WREG, W
     decfsz  count, F, A
     goto    bitshift_loop_x
-    movwf   temp, A				; move shifted y0 into temp
-    btfss   sigma, 0, A
+    movwf   temp, A			; move shifted y0 into temp
+    btfss   sigma, 0, A			; check sign of sigma 
     goto    skip_as_positive_x
     comf    temp, F, A
     incf    temp, F, A
@@ -111,7 +111,7 @@ bitshift_loop_y:
     decfsz  count, F, A
     goto    bitshift_loop_y
     movwf   temp, A
-    btfss   sigma, 0, A
+    btfss   sigma, 0, A			 ; check sign of sigma
     goto    skip_as_positive_y
     comf    temp, F, A
     incf    temp, F, A
@@ -124,8 +124,8 @@ skip_as_positive_y:
 update_z:
     movff   z0, z1, A
     movf    iter_up, W, A
-    addlw   FSR1L
-    movf    POSTINC1, W
+    addlw   FSR1L		
+    movf    POSTINC1, W			 ; retrieve correct value from tan array 		
     btfsc   sigma, 0, A
     goto    pos_sigma
     subwf   z1, F, A
