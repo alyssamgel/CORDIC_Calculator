@@ -93,7 +93,7 @@ bitshift_loop_x:
     btfss   sigma, 0, A			; check sign of sigma (set = negative)
     goto    skip_as_positive_x
     comf    temp, F, A			; negative sigma means that temp must be added so flip temp
-    incf    temp, F, A			; increment temp by 1 
+    incf    temp, F, A			; increment temp by 1, i.e. these two actions negate temp
 skip_as_positive_x:
     movff   x0, x1, A 			; move current value of x to x1
     movf    temp, W, A			; move temp into WREG
@@ -114,7 +114,7 @@ bitshift_loop_y:
     btfss   sigma, 0, A			; check sign of sigma (set = negative)
     goto    skip_as_positive_y		
     comf    temp, F, A			; negative sigma means that temp must be subtracted so flip
-    incf    temp, F, A			; increment temp by 1 
+    incf    temp, F, A			; increment temp by 1, i.e. these two actions negate temp
 skip_as_positive_y:
     movff   y0, y1, A			; move current value of y to y1
     movf    temp, W, A			; move temp into WREG
