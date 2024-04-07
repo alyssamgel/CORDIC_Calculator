@@ -70,7 +70,7 @@ cordic_loop:
     call    update_y
     call    update_z
     
-    movff   x1, x0, A
+    movff   x1, x0, A			; update stored values of x, y and z 
     movff   y1, y0, A
     movff   z1, z0, A
     
@@ -79,56 +79,56 @@ cordic_loop:
     goto    cordic_loop
     return
 
-update_x:
-    movff   iter_up, count, A
+update_x:				; evaluates x[i+1] = x[i] - sigma*y[i]*2^-i
+    movff   iter_up, count, A		
     movlw   0x01
     addwf   count, A
-    movf    y0, W, A
+    movf    y0, W, A			; store current y in W
 bitshift_loop_x:
-    bcf     STATUS, 0
-    rrcf    WREG, W
-    decfsz  count, F, A
+    bcf     STATUS, 0			; clear carry flag of STATUS register
+    rrcf    WREG, W			; rotate W right through carry, store in W (bit shift current y right by 1) 
+    decfsz  count, F, A			; decrement the count value by 1, continue until count is 0 
     goto    bitshift_loop_x
     movwf   temp, A			; move shifted y0 into temp
-    btfss   sigma, 0, A			; check sign of sigma 
+    btfss   sigma, 0, A			; check sign of sigma (set = negative)
     goto    skip_as_positive_x
-    comf    temp, F, A
-    incf    temp, F, A
+    comf    temp, F, A			; negative sigma means that temp must be added so flip temp
+    incf    temp, F, A			; increment temp by 1 
 skip_as_positive_x:
-    movff   x0, x1, A
-    movf    temp, W, A
-    subwf   x1, F, A
+    movff   x0, x1, A 			; move current value of x to x1
+    movf    temp, W, A			; move temp into WREG
+    subwf   x1, F, A			; subtract temp from x1 (current x) 
     return
 
-update_y:
+update_y:				; evaluates y[i+1] = y[i] + sigma*x[i]*2^-i
     movff   iter_up, count, A
     movlw   0x01
     addwf   count, A
-    movf    x0, W, A
+    movf    x0, W, A			; store current x in W
 bitshift_loop_y:
-    bcf     STATUS, 0
-    rrcf    WREG, W
-    decfsz  count, F, A
+    bcf     STATUS, 0			; clear carry flag of STATUS register
+    rrcf    WREG, W			; rotate W right through carry, store in W (bit shift current x right by 1)
+    decfsz  count, F, A			; decrease count value by 1 until count reaches 0 
     goto    bitshift_loop_y
-    movwf   temp, A
-    btfss   sigma, 0, A			 ; check sign of sigma
-    goto    skip_as_positive_y
-    comf    temp, F, A
-    incf    temp, F, A
+    movwf   temp, A			; store shifted value of x as temp 
+    btfss   sigma, 0, A			; check sign of sigma (set = negative)
+    goto    skip_as_positive_y		
+    comf    temp, F, A			; negative sigma means that temp must be subtracted so flip
+    incf    temp, F, A			; increment temp by 1 
 skip_as_positive_y:
-    movff   y0, y1, A
-    movf    temp, W, A
-    addwf   y1, F, A
+    movff   y0, y1, A			; move current value of y to y1
+    movf    temp, W, A			; move temp into WREG
+    addwf   y1, F, A			; add WREG (temp) to y1 (current y)  
     return
 
-update_z:
-    movff   z0, z1, A
-    movf    iter_up, W, A
-    addlw   FSR1L		
-    movf    POSTINC1, W			 ; retrieve correct value from tan array 		
-    btfsc   sigma, 0, A
+update_z:				; evaluate z[i+1] = z[i] - sigma*arctan(2^-1)
+    movff   z0, z1, A			; move current value of z to z1
+    movf    iter_up, W, A		; move current iteration number to WREG 		
+    addlw   FSR1L			; add address of lower tan array to WREG (current iteration) 		
+    movf    POSTINC1, W			; retrieve correct value from tan array 		
+    btfsc   sigma, 0, A			; check sign of sigma (set is negative) 
     goto    pos_sigma
-    subwf   z1, F, A
+    subwf   z1, F, A			
     goto    update_z_end
     
 pos_sigma:
@@ -138,23 +138,23 @@ update_z_end:
     return
 
 find_sigma_j:
-    btfss   z0, 7, A			; bit test z, +ve or -ve
-    goto    neg_sigma
+    btfss   z0, 7, A			; bit test most significant bit of z (set = negative)
+    goto    pos_sigma
     movlw   0x01			; If sig < 0 then set #0 to 1
     movwf   sigma, A
     return
     
-    neg_sigma:
+    pos_sigma:
     movlw   0x00			; If sig > 0 then set #0 to 0
     movwf   sigma, A
     return
 
 return_sin:
-    movf    y0, W, A      ; Load the y value (sine) into WREG
+    movf    y0, W, A      		; Load the y value (sine) into WREG
     return
 
 return_cosine:
-    movf    x0, W, A      ; Load the x value (cosine) into WREG
+    movf    x0, W, A      		; Load the x value (cosine) into WREG
     return
 
 
