@@ -164,8 +164,8 @@ delay_x4us:				; delay given in chunks of
 	call	delay
 	return
 
-delay:					; delay routine	4 instruction loop    
-	movlw 	0x00			; W=0
+delay:					
+	movlw 	0x00			; move 0 to WREG
 lp1:	decf 	cnt_l, F, A		; no carry when 0x00 -> 0xff
 	subwfb 	cnt_h, F, A		; no carry when 0x00 -> 0xff
 	bc 	lp1			; carry, then loop again
@@ -173,17 +173,17 @@ lp1:	decf 	cnt_l, F, A		; no carry when 0x00 -> 0xff
 	
     
 loop_subtract:
-    movlw   10              ; Load W with the decimal 10
-    subwf   number, W, A       ; Subtract 10 from number, result in W
-    btfss   STATUS, 0       ; Check if there was no borrow (Carry set)
-    goto    done            ; Borrow occurred, subtraction invalid, done
+    movlw   10              		; move a value of 10 to WREG
+    subwf   number, W, A       		; subtract 10 from number, move to WREG
+    btfss   STATUS, 0       		; bit check status (check for borrow)
+    goto    done            		; borrow occured 
     movwf   number
     incf    digit_first, F
     bra	    loop_subtract
 
 done:
-    movf    number, W, A       ; Move the remainder to W
-    movwf   digit_second, A       ; Move W to the ones place
+    movf    number, W, A       		; move the remainder to W
+    movwf   digit_second, A       	; move W to the second digit place
     return
 	
 	end	rst
